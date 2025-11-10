@@ -1,0 +1,7 @@
+{
+  "journal_folder": "journals",
+  "output_folder": "ai_outputs",
+  "prompt": "Summarize the main themes and insights from this journal entry.",
+  "model": "gpt-4o",
+  "last_processed_file": null
+}
