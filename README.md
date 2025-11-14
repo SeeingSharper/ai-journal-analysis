@@ -36,7 +36,10 @@ Create a JSON config file with the following fields:
 
 - **input_folder** (required): Path to folder containing markdown files to process (searches recursively)
 - **output_folder** (required): Where to save AI-generated outputs
-- **prompt** (required): The instruction to send to the AI for each file
+- **prompt** / **prompt_file** / **prompt_files** (required): The instruction(s) to send to the AI. Can be:
+  - `"prompt"`: A single inline prompt string
+  - `"prompt_file"`: A single file path containing the prompt
+  - `"prompt_files"`: An array of prompts/files to combine (e.g., `["prompts/base.txt", "prompts/format.txt"]`)
 - **model** (optional): AI model to use. Supports OpenAI models (gpt-4o, gpt-4, etc.) and Claude models (claude-sonnet-4-20250514, etc.). Default: `gpt-4o`
 - **max_batch_size** (optional): Number of files to concatenate and send together in a single AI request. Set to `null` or `1` to process files individually. Useful for analyzing multiple entries together or controlling API costs. For example, setting this to `3` will concatenate 3 files together and send them as one combined request to the AI.
 - **last_processed_file** (auto-managed): Path to the last successfully processed file. Set to `null` to process all files.

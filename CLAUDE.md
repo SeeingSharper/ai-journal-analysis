@@ -53,6 +53,8 @@ All helper functions in [simple_ai_processor.py](simple_ai_processor.py) are pre
 - `_process_batch_with_ai()`: Concatenates multiple files and sends combined content to the AI provider
 - `_generate_batch_filename()`: Creates appropriate output filename for single files or batches
 - `_save_output()`: Writes AI response to output folder
+- `_load_prompt()`: Loads and combines multiple prompts (from files or inline strings)
+- `_load_single_prompt()`: Helper to load a single prompt from file or string
 - `_load_config()` / `_save_config()`: JSON config file operations
 - `_get_input_files()`: Finds and filters markdown files based on state
 
@@ -61,7 +63,10 @@ All helper functions in [simple_ai_processor.py](simple_ai_processor.py) are pre
 Required fields:
 - `input_folder`: Path to folder with markdown files to process
 - `output_folder`: Where to save AI-generated outputs
-- `prompt`: AI instruction for processing each file
+- `prompt` / `prompt_file` / `prompt_files`: Prompt instruction(s) - supports:
+  - Single inline string
+  - Single file path
+  - Array of prompts/files to combine
 
 Optional fields:
 - `model`: AI model to use - supports OpenAI (gpt-4o, gpt-4, o1, o3) and Claude (claude-sonnet-4-20250514, etc.). Default: `gpt-4o`

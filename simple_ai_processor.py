@@ -56,13 +56,13 @@ def _generate_batch_filename(file_paths: list) -> str:
         A filename representing the batch (e.g., "2024-01-10_to_2024-01-12.txt")
     """
     if len(file_paths) == 1:
-        return Path(file_paths[0]).stem + ".txt"
+        return Path(file_paths[0]).stem + ".md"
 
     # Use first and last filename stems
     first_stem = Path(file_paths[0]).stem
     last_stem = Path(file_paths[-1]).stem
 
-    return f"{first_stem}_to_{last_stem}.txt"
+    return f"{first_stem}_to_{last_stem}.md"
 
 
 def _save_output(output: str, output_dir: str, output_filename: str) -> str:
@@ -77,6 +77,46 @@ def _save_output(output: str, output_dir: str, output_filename: str) -> str:
         f.write(output)
 
     return output_path
+
+
+def _load_single_prompt(prompt_or_file: str) -> str:
+    """Load a single prompt from a file or return the prompt string directly.
+
+    Args:
+        prompt_or_file: Either a prompt string or a path to a file containing the prompt
+
+    Returns:
+        The prompt text
+    """
+    # Check if it's a file path
+    if os.path.exists(prompt_or_file):
+        with open(prompt_or_file, 'r', encoding='utf-8') as f:
+            return f.read().strip()
+    # Otherwise, treat it as a direct prompt string
+    return prompt_or_file
+
+
+def _load_prompt(prompt_value) -> str:
+    """Load prompt(s) from file(s) or return the prompt string(s) directly.
+
+    Args:
+        prompt_value: Can be:
+            - A string (prompt text or file path)
+            - A list of strings (multiple prompts/files to combine)
+
+    Returns:
+        The combined prompt text
+    """
+    # Handle list of prompts
+    if isinstance(prompt_value, list):
+        prompts = []
+        for item in prompt_value:
+            prompts.append(_load_single_prompt(item))
+        # Join multiple prompts with double newline separator
+        return "\n\n".join(prompts)
+
+    # Handle single prompt
+    return _load_single_prompt(prompt_value)
 
 
 def _load_config(config_path: str) -> dict:
@@ -135,15 +175,18 @@ def main():
 
     input_folder = config.get('input_folder')
     output_folder = config.get('output_folder')
-    prompt = config.get('prompt')
+    prompt_value = config.get('prompt') or config.get('prompt_file') or config.get('prompt_files')
     model = config.get('model', 'gpt-4o')
     max_batch_size = config.get('max_batch_size')
     last_processed = config.get('last_processed_file')
 
     # Validate required config fields
-    if not all([input_folder, output_folder, prompt]):
-        print("Error: Config must contain 'input_folder', 'output_folder', and 'prompt'")
+    if not all([input_folder, output_folder, prompt_value]):
+        print("Error: Config must contain 'input_folder', 'output_folder', and either 'prompt', 'prompt_file', or 'prompt_files'")
         return
+
+    # Load the prompt(s) - can be single or multiple, inline or from file(s)
+    prompt = _load_prompt(prompt_value)
 
     # Create AI provider based on model
     try:

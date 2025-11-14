@@ -1,8 +1,12 @@
 {
   "input_folder": "journals",
   "output_folder": "ai_outputs",
-  "prompt": "Summarize the main themes and insights from this journal entry.",
+  "prompt_files": [
+    "prompts/base_instructions.txt",
+    "prompts/output_format.txt"
+  ],
   "model": "gpt-4o",
   "max_batch_size": null,
-  "last_processed_file": null
+  "last_processed_file": null,
+  "_comment": "Use 'prompt' for inline text, 'prompt_file' for a single file, or 'prompt_files' for multiple files/strings to combine"
 }
