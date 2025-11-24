@@ -80,18 +80,36 @@ def _save_output(output: str, output_dir: str, output_filename: str) -> str:
 
 
 def _load_single_prompt(prompt_or_file: str) -> str:
-    """Load a single prompt from a file or return the prompt string directly.
+    """Load a single prompt from a file, folder, or return the prompt string directly.
 
     Args:
-        prompt_or_file: Either a prompt string or a path to a file containing the prompt
+        prompt_or_file: Either a prompt string, a path to a file, or a path to a folder containing prompts
 
     Returns:
         The prompt text
     """
+    # Check if it's a directory path
+    if os.path.isdir(prompt_or_file):
+        folder_path = Path(prompt_or_file)
+        # Get all text files in the folder, sorted alphabetically
+        txt_files = sorted(folder_path.glob("*.md"))
+
+        if not txt_files:
+            raise ValueError(f"No .md files found in folder: {prompt_or_file}")
+
+        prompts = []
+        for txt_file in txt_files:
+            with open(txt_file, 'r', encoding='utf-8') as f:
+                prompts.append(f.read().strip())
+
+        # Join multiple prompts with double newline separator
+        return "\n\n".join(prompts)
+
     # Check if it's a file path
-    if os.path.exists(prompt_or_file):
+    if os.path.isfile(prompt_or_file):
         with open(prompt_or_file, 'r', encoding='utf-8') as f:
             return f.read().strip()
+
     # Otherwise, treat it as a direct prompt string
     return prompt_or_file
 
@@ -158,6 +176,31 @@ def _get_input_files(input_folder: str, last_processed: str = None, max_batch_si
 
     return file_paths
 
+
+def _should_reload_prompts(output_folder: str, prompt_value) -> bool:
+    """Check if output folder matches any prompt paths (indicating iterative prompting).
+
+    Args:
+        output_folder: The folder where outputs are saved
+        prompt_value: The prompt configuration (string or list)
+
+    Returns:
+        True if prompts should be reloaded after each batch
+    """
+    output_path = os.path.abspath(output_folder)
+
+    # Convert prompt_value to a list if it's a single value
+    prompt_paths = prompt_value if isinstance(prompt_value, list) else [prompt_value]
+
+    for prompt_path in prompt_paths:
+        # Check if prompt_path exists and is a directory
+        if os.path.exists(prompt_path) and os.path.isdir(prompt_path):
+            abs_prompt_path = os.path.abspath(prompt_path)
+            if abs_prompt_path == output_path:
+                return True
+
+    return False
+
 def main():
     parser = argparse.ArgumentParser(
         description="Process markdown files with AI using config file"
@@ -184,6 +227,13 @@ def main():
     if not all([input_folder, output_folder, prompt_value]):
         print("Error: Config must contain 'input_folder', 'output_folder', and either 'prompt', 'prompt_file', or 'prompt_files'")
         return
+
+    # Check if we need to reload prompts after each batch (iterative prompting)
+    reload_prompts = _should_reload_prompts(output_folder, prompt_value)
+
+    if reload_prompts:
+        print("Iterative prompting enabled: Output folder matches a prompt folder")
+        print("Prompts will be reloaded after each batch to include previous outputs\n")
 
     # Load the prompt(s) - can be single or multiple, inline or from file(s)
     prompt = _load_prompt(prompt_value)
@@ -232,6 +282,12 @@ def main():
             # Update last processed file in config (the last file in the batch)
             config['last_processed_file'] = batch[-1]
             _save_config(args.config, config)
+
+            # Reload prompts if output folder matches a prompt folder
+            # This allows iterative prompting where previous outputs become part of the prompt
+            if reload_prompts:
+                prompt = _load_prompt(prompt_value)
+                print("  ↻ Prompts reloaded to include new outputs")
 
         except Exception as e:
             batch_desc = batch[0] if len(batch) == 1 else f"batch starting with {batch[0]}"

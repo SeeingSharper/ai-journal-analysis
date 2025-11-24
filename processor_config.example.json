@@ -8,5 +8,5 @@
   "model": "gpt-4o",
   "max_batch_size": null,
   "last_processed_file": null,
-  "_comment": "Use 'prompt' for inline text, 'prompt_file' for a single file, or 'prompt_files' for multiple files/strings to combine"
+  "_comment": "Use 'prompt' for inline text, 'prompt_file' for a single file/folder, or 'prompt_files' for multiple files/folders/strings to combine. If a folder is specified, all .md files in it will be combined alphabetically. If output_folder matches a prompt folder, prompts are reloaded after each batch for iterative processing"
 }
