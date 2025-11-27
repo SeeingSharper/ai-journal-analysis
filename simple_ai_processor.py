@@ -95,7 +95,7 @@ def _load_single_prompt(prompt_or_file: str) -> str:
         txt_files = sorted(folder_path.glob("*.md"))
 
         if not txt_files:
-            raise ValueError(f"No .md files found in folder: {prompt_or_file}")
+            return ""
 
         prompts = []
         for txt_file in txt_files:
