@@ -42,6 +42,10 @@ def _process_batch_with_ai(file_paths: list, prompt: str, provider) -> str:
     separator = "\n\n" + "="*80 + "\n\n"
     batch_content = separator.join(combined_content)
 
+    # Estimate and log token usage
+    estimated_tokens = provider.estimate_tokens(batch_content, prompt)
+    print(f"  → Estimated tokens: {estimated_tokens:,}")
+
     # Use the provider to process the combined content
     return provider.process(batch_content, prompt)
 

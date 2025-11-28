@@ -29,6 +29,34 @@ class OpenAIProvider(AIProvider):
 
         self.client = OpenAI(api_key=api_key)
 
+    def estimate_tokens(self, content: str, prompt: str) -> int:
+        """
+        Estimate the number of tokens that will be consumed by a request.
+
+        Args:
+            content: The text content to process
+            prompt: The instruction/prompt for the AI
+
+        Returns:
+            Estimated number of input tokens
+        """
+        full_prompt = f"{prompt}\n\nContent:\n{content}"
+
+        try:
+            import tiktoken
+            # Get the encoding for the model
+            try:
+                encoding = tiktoken.encoding_for_model(self.model)
+            except KeyError:
+                # Default to cl100k_base encoding for newer models
+                encoding = tiktoken.get_encoding("cl100k_base")
+
+            return len(encoding.encode(full_prompt))
+        except ImportError:
+            # Fallback to rough estimation if tiktoken is not available
+            # GPT models use approximately 4 characters per token
+            return len(full_prompt) // 4
+
     def process(self, content: str, prompt: str) -> str:
         """
         Process content using OpenAI's API.

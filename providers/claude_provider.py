@@ -29,6 +29,28 @@ class ClaudeProvider(AIProvider):
 
         self.client = Anthropic(api_key=api_key)
 
+    def estimate_tokens(self, content: str, prompt: str) -> int:
+        """
+        Estimate the number of tokens that will be consumed by a request.
+
+        Args:
+            content: The text content to process
+            prompt: The instruction/prompt for the AI
+
+        Returns:
+            Estimated number of input tokens
+        """
+        full_prompt = f"{prompt}\n\nContent:\n{content}"
+
+        try:
+            # Use Anthropic's built-in token counting
+            token_count = self.client.count_tokens(full_prompt)
+            return token_count
+        except Exception:
+            # Fallback to rough estimation if API call fails
+            # Claude uses approximately 4 characters per token
+            return len(full_prompt) // 4
+
     def process(self, content: str, prompt: str) -> str:
         """
         Process content using Anthropic's Claude API.
