@@ -1,25 +1,36 @@
-# Simple AI Processor
+# Phylo
 
-A config-driven script to process markdown files with AI and save the outputs. Perfect for GitHub Actions automation.
+A config-driven CLI tool to process markdown files with AI and save the outputs. Perfect for journal analysis, batch document processing, and GitHub Actions automation.
 
 ## Features
 
 - **Config-based**: All settings in a single JSON file
 - **Incremental processing**: Tracks last processed file, only processes new entries
 - **Ordered processing**: Processes files from oldest to newest (by modification time)
+- **Batch processing**: Combine multiple files into single AI requests
+- **Multi-provider support**: Works with OpenAI, Anthropic, and other providers via abso-ai
+- **Iterative prompting**: Reload prompts after each batch when output matches prompt folder
 - **GitHub Actions ready**: No manual input required, can run fully automated
-- **Auto-updating**: Config file is updated after each successful processing
+
+## Installation
+
+```bash
+# Install globally
+npm install -g phylo
+
+# Or run with npx
+npx phylo --config config.json
+```
 
 ## Setup
 
-1. Ensure you have the appropriate API key in your `.env` file or environment variables:
-   - For OpenAI models (gpt-4o, gpt-4, etc.): `OPENAI_API_KEY`
-   - For Claude models (claude-sonnet-4, etc.): `ANTHROPIC_API_KEY`
-2. Create a config file (see example below)
+1. Set your API keys as environment variables or in a `.env` file:
+   - For OpenAI models: `OPENAI_API_KEY`
+   - For Claude models: `ANTHROPIC_API_KEY`
+
+2. Create a config file (see format below)
 
 ## Config File Format
-
-Create a JSON config file with the following fields:
 
 ```json
 {
@@ -34,50 +45,53 @@ Create a JSON config file with the following fields:
 
 ### Config Fields
 
-- **input_folder** (required): Path to folder containing markdown files to process (searches recursively)
-- **output_folder** (required): Where to save AI-generated outputs
-- **prompt** / **prompt_file** / **prompt_files** (required): The instruction(s) to send to the AI. Can be:
-  - `"prompt"`: A single inline prompt string
-  - `"prompt_file"`: A single file path containing the prompt
-  - `"prompt_files"`: An array of prompts/files to combine (e.g., `["prompts/base.txt", "prompts/format.txt"]`)
-- **model** (optional): AI model to use. Supports OpenAI models (gpt-4o, gpt-4, etc.) and Claude models (claude-sonnet-4-20250514, etc.). Default: `gpt-4o`
-- **max_batch_size** (optional): Number of files to concatenate and send together in a single AI request. Set to `null` or `1` to process files individually. Useful for analyzing multiple entries together or controlling API costs. For example, setting this to `3` will concatenate 3 files together and send them as one combined request to the AI.
-- **last_processed_file** (auto-managed): Path to the last successfully processed file. Set to `null` to process all files.
+| Field | Required | Description |
+|-------|----------|-------------|
+| `input_folder` | Yes | Path to folder containing markdown files to process (searches recursively) |
+| `output_folder` | Yes | Where to save AI-generated outputs |
+| `prompt` / `prompt_file` / `prompt_files` | Yes | The instruction(s) to send to the AI (see below) |
+| `model` | No | AI model to use (default: `gpt-4o`) |
+| `max_batch_size` | No | Number of files to combine per request. `null` or `1` = individual processing |
+| `last_processed_file` | Auto | Tracks progress. Set to `null` to reprocess all files |
+
+### Prompt Options
+
+- `"prompt"`: Inline prompt string
+- `"prompt_file"`: Path to a file or folder containing prompts
+- `"prompt_files"`: Array of prompts/files/folders to combine
+
+When a folder is specified, all `.md` files in it are combined alphabetically.
 
 ## Usage
 
-### Basic Example
 ```bash
-python3 simple_ai_processor.py --config processor_config.json
+# Basic usage
+phylo --config processor_config.json
+
+# With shorthand
+phylo -c config.json
 ```
 
 ### How It Works
 
-1. Script reads the config file
+1. Reads the config file
 2. Finds all `.md` files in `input_folder` (recursively)
 3. Sorts files by modification time (oldest first)
 4. Skips files up to and including `last_processed_file`
-5. Groups remaining files into batches of size `max_batch_size` (or processes individually if not set)
+5. Groups remaining files into batches of `max_batch_size`
 6. For each batch:
-   - Concatenates all files in the batch together with separators
-   - Sends the combined content to the AI model in a single request
-   - Saves output to `output_folder` (filename based on batch, e.g., `2024-01-10_to_2024-01-12.txt`)
-   - Updates `last_processed_file` to the last file in the batch
-7. If an error occurs, processing stops and config is not updated (allows retry)
+   - Concatenates files with separators
+   - Sends to the AI model
+   - Saves output to `output_folder`
+   - Updates `last_processed_file` in config
+7. Stops on error without updating config (allows retry)
 
-### Output Files
+### Output Filenames
 
-Output filenames depend on batch size:
-- **Single file** (batch_size = 1 or null): Uses same name as input
-  - Input: `journals/2024-01-15.md`
-  - Output: `ai_outputs/2024-01-15.txt`
-- **Multiple files** (batch_size > 1): Uses range format
-  - Input: `journals/2024-01-10.md`, `journals/2024-01-12.md`, `journals/2024-01-15.md`
-  - Output: `ai_outputs/2024-01-10_to_2024-01-15.txt`
+- **Single file**: Uses same name as input (e.g., `2024-01-15.md`)
+- **Batch**: Uses range format (e.g., `2024-01-10_to_2024-01-15.md`)
 
 ## GitHub Actions Integration
-
-This script is designed to work in GitHub Actions:
 
 ```yaml
 - name: Process new markdown files
@@ -85,47 +99,54 @@ This script is designed to work in GitHub Actions:
     OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
     ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
   run: |
-    python3 simple_ai_processor.py --config processor_config.json
+    npx phylo --config processor_config.json
 ```
 
-Note: Only include the API key(s) that match the model you're using in your config.
+## Example Configs
 
-The config file can be committed to the repo, and `last_processed_file` will be updated automatically as part of the workflow.
+### Individual Processing
 
-## Example Workflows
-
-### Example 1: Individual Processing (batch_size = null or 1)
-
-**First run** (config has `"last_processed_file": null`):
-```
-Found 3 file(s) to process
-Processing: journals/2024-01-10.md
-✓ Saved output to: ai_outputs/2024-01-10.txt
-Processing: journals/2024-01-15.md
-✓ Saved output to: ai_outputs/2024-01-15.txt
-Processing: journals/2024-01-20.md
-✓ Saved output to: ai_outputs/2024-01-20.txt
+```json
+{
+  "input_folder": "journals/2024",
+  "output_folder": "analysis/2024",
+  "prompt_file": "prompts/analyze.md",
+  "model": "claude-sonnet-4-5-20250929"
+}
 ```
 
-### Example 2: Batch Processing (batch_size = 3)
+### Batch Processing (3 files at a time)
 
-**First run** (config has `"last_processed_file": null and "max_batch_size": 3`):
-```
-Found 5 file(s) to process
-
-Processing batch of 3 files:
-  - journals/2024-01-10.md
-  - journals/2024-01-15.md
-  - journals/2024-01-20.md
-✓ Saved output to: ai_outputs/2024-01-10_to_2024-01-20.txt
-
-Processing batch of 2 files:
-  - journals/2024-01-25.md
-  - journals/2024-01-30.md
-✓ Saved output to: ai_outputs/2024-01-25_to_2024-01-30.txt
+```json
+{
+  "input_folder": "journals",
+  "output_folder": "summaries",
+  "prompt": "Create a weekly summary of these journal entries.",
+  "model": "gpt-4o",
+  "max_batch_size": 3
+}
 ```
 
-**Second run** (no new files):
+### Multiple Prompts Combined
+
+```json
+{
+  "input_folder": "documents",
+  "output_folder": "processed",
+  "prompt_files": [
+    "prompts/base_instructions.md",
+    "prompts/output_format.md",
+    "prompts/context"
+  ],
+  "model": "gpt-4o"
+}
 ```
-No new files to process.
-```
+
+## Iterative Prompting
+
+When `output_folder` matches one of the prompt paths, Phylo enables iterative prompting mode. After each batch, prompts are reloaded to include previous outputs, allowing the AI to build on its prior analysis.
+
+## License
+
+MIT
+

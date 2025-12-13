@@ -1,0 +1,12 @@
+{
+  "input_folder": "journals",
+  "output_folder": "ai_outputs",
+  "prompt_files": [
+    "prompts/base_instructions.md",
+    "prompts/output_format.md"
+  ],
+  "model": "gpt-4o",
+  "max_batch_size": null,
+  "last_processed_file": null
+}
+
