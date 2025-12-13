@@ -4,13 +4,13 @@
   "description": "Config-driven AI file processor for markdown files",
   "main": "dist/index.js",
   "bin": {
-    "phylo": "dist/index.js"
+    "phylo": "dist/cli.js"
   },
   "type": "module",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/index.js",
-    "dev": "tsx src/index.ts",
+    "start": "node dist/cli.js",
+    "dev": "tsx src/cli.ts",
     "prepublishOnly": "npm run build"
   },
   "keywords": [

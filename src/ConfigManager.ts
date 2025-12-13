@@ -33,6 +33,15 @@ export class ConfigManager {
       throw new Error('Config must contain "prompt", "prompt_file", or "prompt_files"');
     }
 
+    // Apply environment variables from config (takes priority over existing)
+    if (config.env) {
+      for (const [key, value] of Object.entries(config.env)) {
+        if (value) {
+          process.env[key] = value;
+        }
+      }
+    }
+
     return new ConfigManager(config, configPath, logger);
   }
 
@@ -112,6 +121,20 @@ export class ConfigManager {
    */
   get lastProcessed(): string | null | undefined {
     return this.config.last_processed_file;
+  }
+
+  /**
+   * Get the input file pattern
+   */
+  get inputFilePattern(): string | undefined {
+    return this.config.input_file_pattern;
+  }
+
+  /**
+   * Get the output file extension
+   */
+  get outputFileExtension(): string | undefined {
+    return this.config.output_file_extension;
   }
 }
 

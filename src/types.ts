@@ -75,6 +75,12 @@ export interface ProcessorConfig {
   max_batch_size?: number | null;
   /** Path to the last successfully processed file (auto-managed) */
   last_processed_file?: string | null;
+  /** Glob pattern for filtering input files (default: all .md files) */
+  input_file_pattern?: string;
+  /** File extension for output files (default: .md) */
+  output_file_extension?: string;
+  /** Environment variables (API keys) - takes priority over .env */
+  env?: Record<string, string>;
 }
 
 /**

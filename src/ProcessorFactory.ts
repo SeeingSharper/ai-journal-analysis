@@ -21,12 +21,14 @@ export class ProcessorFactory {
       inputFolder: configManager.inputFolder,
       lastProcessed: configManager.lastProcessed,
       batchSize: configManager.batchSize ?? 1,
+      filePattern: configManager.inputFilePattern,
     });
 
     // Create the output writer
     const outputWriter = new FileOutputWriter({
       outputFolder: configManager.outputFolder,
       configManager,
+      fileExtension: configManager.outputFileExtension,
     });
 
     // Create the prompt provider

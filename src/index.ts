@@ -1,34 +1,29 @@
-#!/usr/bin/env node
-import { Command } from 'commander';
-import dotenv from 'dotenv';
-import { ConfigManager } from './ConfigManager.js';
-import { ProcessorFactory } from './ProcessorFactory.js';
-import { ConsoleLogger } from './ConsoleLogger.js';
+/**
+ * Phylo - Config-driven AI file processor
+ *
+ * Library exports for programmatic usage
+ */
 
-// Load environment variables from .env file
-dotenv.config();
+// Core processor
+export { Processor } from './Processor.js';
+export { ProcessorFactory } from './ProcessorFactory.js';
 
-const program = new Command();
+// Configuration
+export { ConfigManager } from './ConfigManager.js';
 
-program
-  .name('phylo')
-  .description('Config-driven AI file processor for markdown files')
-  .version('1.0.0');
+// Default implementations
+export { ConsoleLogger } from './ConsoleLogger.js';
+export { FileInputReader } from './FileInputReader.js';
+export { FileOutputWriter } from './FileOutputWriter.js';
+export { FilePromptProvider } from './FilePromptProvider.js';
 
-program
-  .requiredOption('-c, --config <path>', 'Path to JSON config file')
-  .action(async (options: { config: string }) => {
-    const logger = new ConsoleLogger();
-
-    try {
-      const configManager = await ConfigManager.load(options.config, logger);
-      const processor = ProcessorFactory.create(configManager, logger);
-      await processor.process();
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error(`Error: ${errorMessage}`);
-      process.exit(1);
-    }
-  });
-
-program.parse();
+// Types
+export type {
+  Batch,
+  InputReader,
+  OutputWriter,
+  PromptProvider,
+  ProcessorConfig,
+  Logger,
+  FileInfo,
+} from './types.js';
