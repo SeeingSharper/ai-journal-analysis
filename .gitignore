@@ -4,5 +4,13 @@ dist/
 *.log
 .DS_Store
 
+# Turborepo
+.turbo/
+
+# Config files (user-specific)
 configs/
 analyze-journals.sh
+phylo.config.json
+
+# Test fixtures
+test-fixtures/

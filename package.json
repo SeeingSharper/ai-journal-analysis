@@ -1,60 +1,25 @@
 {
-  "name": "phylo",
+  "name": "phylo-monorepo",
   "version": "1.0.0",
-  "description": "Config-driven AI file processor - use as CLI tool or library",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    },
-    "./package.json": "./package.json"
-  },
-  "bin": {
-    "phylo": "dist/cli.js"
-  },
-  "type": "module",
-  "scripts": {
-    "build": "tsc",
-    "start": "node dist/cli.js",
-    "dev": "tsx src/cli.ts",
-    "prepublishOnly": "npm run build"
-  },
-  "keywords": [
-    "ai",
-    "markdown",
-    "processor",
-    "cli",
-    "journal",
-    "openai",
-    "anthropic",
-    "claude",
-    "batch-processing",
-    "automation",
-    "file-processing",
-    "llm"
+  "private": true,
+  "description": "Phylo monorepo - AI file processing tools",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
   ],
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.39.0",
-    "abso-ai": "^0.0.9",
-    "chalk": "^5.3.0",
-    "commander": "^12.1.0",
-    "dotenv": "^16.4.7",
-    "glob": "^11.0.0"
+  "scripts": {
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "dev": "turbo run dev",
+    "clean": "turbo run clean && rm -rf node_modules"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
-    "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "turbo": "^2.6.3",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": ">=18.0.0"
   },
-  "files": [
-    "dist"
-  ]
+  "packageManager": "npm@10.0.0"
 }
-

@@ -1,0 +1,41 @@
+{
+  "name": "@phylo/cli",
+  "version": "1.0.0",
+  "description": "Phylo CLI - Config-driven AI file processor command line tool",
+  "type": "module",
+  "bin": {
+    "phylo": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/cli.js",
+    "dev": "tsx src/cli.ts",
+    "clean": "rm -rf dist"
+  },
+  "keywords": [
+    "ai",
+    "cli",
+    "processor",
+    "openai",
+    "anthropic",
+    "claude"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@phylo/processor": "*",
+    "commander": "^12.1.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "tsx": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "dist"
+  ]
+}
+
