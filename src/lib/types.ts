@@ -122,3 +122,4 @@ export interface FileInfo {
   /** Modification time in milliseconds */
   mtime: number;
 }
+

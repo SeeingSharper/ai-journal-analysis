@@ -5,17 +5,17 @@
  */
 
 // Core processor
-export { Processor } from './Processor.js';
-export { ProcessorFactory } from './ProcessorFactory.js';
+export { Processor } from './lib/Processor.js';
+export { ProcessorFactory } from './lib/ProcessorFactory.js';
 
 // Configuration
-export { ConfigManager } from './ConfigManager.js';
+export { ConfigManager } from './lib/ConfigManager.js';
 
 // Default implementations
-export { ConsoleLogger } from './ConsoleLogger.js';
-export { FileInputReader } from './FileInputReader.js';
-export { FileOutputWriter } from './FileOutputWriter.js';
-export { FilePromptProvider } from './FilePromptProvider.js';
+export { ConsoleLogger } from './lib/ConsoleLogger.js';
+export { FileInputReader } from './lib/FileInputReader.js';
+export { FileOutputWriter } from './lib/FileOutputWriter.js';
+export { FilePromptProvider } from './lib/FilePromptProvider.js';
 
 // Types
 export type {
@@ -26,4 +26,4 @@ export type {
   ProcessorConfig,
   Logger,
   FileInfo,
-} from './types.js';
+} from './lib/types.js';

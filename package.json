@@ -1,8 +1,16 @@
 {
   "name": "phylo",
   "version": "1.0.0",
-  "description": "Config-driven AI file processor for markdown files",
+  "description": "Config-driven AI file processor - use as CLI tool or library",
   "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./package.json": "./package.json"
+  },
   "bin": {
     "phylo": "dist/cli.js"
   },
@@ -21,7 +29,11 @@
     "journal",
     "openai",
     "anthropic",
-    "claude"
+    "claude",
+    "batch-processing",
+    "automation",
+    "file-processing",
+    "llm"
   ],
   "author": "",
   "license": "MIT",

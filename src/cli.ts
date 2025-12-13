@@ -4,10 +4,10 @@ import { writeFile } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import dotenv from 'dotenv';
-import { ConfigManager } from './ConfigManager.js';
-import { ProcessorFactory } from './ProcessorFactory.js';
-import { ConsoleLogger } from './ConsoleLogger.js';
-import type { ProcessorConfig } from './types.js';
+import { ConfigManager } from './lib/ConfigManager.js';
+import { ProcessorFactory } from './lib/ProcessorFactory.js';
+import { ConsoleLogger } from './lib/ConsoleLogger.js';
+import type { ProcessorConfig } from './lib/types.js';
 
 // Load environment variables from .env file
 dotenv.config();
