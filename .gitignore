@@ -14,3 +14,6 @@ phylo.config.json
 
 # Test fixtures
 test-fixtures/
+
+# TypeScript incremental build info
+**/*.tsbuildinfo
