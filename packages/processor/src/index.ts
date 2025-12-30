@@ -16,6 +16,7 @@ export { ConsoleLogger } from './ConsoleLogger.js';
 export { FileInputReader } from './FileInputReader.js';
 export { FileOutputWriter } from './FileOutputWriter.js';
 export { FilePromptProvider } from './FilePromptProvider.js';
+export { ProcessorOutputWriter } from './ProcessorOutputWriter.js';
 
 // Types
 export type {
@@ -24,6 +25,8 @@ export type {
   OutputWriter,
   PromptProvider,
   ProcessorConfig,
+  PipelineConfig,
+  NamedProcessorConfig,
   Logger,
   FileInfo,
 } from './types.js';

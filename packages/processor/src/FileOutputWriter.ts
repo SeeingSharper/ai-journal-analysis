@@ -25,7 +25,7 @@ export class FileOutputWriter implements OutputWriter {
   /**
    * Write the processed content and update state
    */
-  async write(batch: Batch, content: string): Promise<void> {
+  async write(batch: Batch): Promise<void> {
     // Create output directory if it doesn't exist
     await mkdir(this.outputFolder, { recursive: true });
 
@@ -33,8 +33,8 @@ export class FileOutputWriter implements OutputWriter {
     const outputFilename = `${batch.name}${this.fileExtension}`;
     const outputPath = join(this.outputFolder, outputFilename);
 
-    // Save the output
-    await writeFile(outputPath, content, { encoding: 'utf-8' });
+    // Save the output (use batch.output or empty string if not set)
+    await writeFile(outputPath, batch.output ?? '', { encoding: 'utf-8' });
 
     // Update and save config state if configManager is provided
     if (this.configManager && batch.lastProcessed) {

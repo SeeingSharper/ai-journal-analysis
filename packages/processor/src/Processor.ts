@@ -11,12 +11,27 @@ async function getAbso() {
   return absoInstance;
 }
 
+const INPUT_SEPARATOR = '\n\n' + '='.repeat(80) + '\n\n';
+
 /**
  * Estimate token count for content (rough approximation: ~4 chars per token)
  */
 function estimateTokens(content: string, prompt: string): number {
   const totalChars = content.length + prompt.length;
   return Math.ceil(totalChars / 4);
+}
+
+/**
+ * Format batch inputs into a single string for the AI
+ */
+function formatInputsForAI(inputs: Record<string, string>): string {
+  const sections: string[] = [];
+
+  for (const [key, content] of Object.entries(inputs)) {
+    sections.push(`Input: ${key}\n\n${content}`);
+  }
+
+  return sections.join(INPUT_SEPARATOR);
 }
 
 /**
@@ -55,9 +70,6 @@ export class Processor {
       this.logger.info('Prompts will be reloaded after each batch to include previous outputs\n');
     }
 
-    // Get the prompt
-    let prompt = await this.promptProvider.getPrompt();
-
     // Read all batches
     const batches = await this.inputReader.read();
 
@@ -74,18 +86,11 @@ export class Processor {
       this.logBatchStart(batch);
 
       try {
-        // Process the batch with AI
-        const output = await this.processWithAI(batch, prompt);
-
-        // Write the output
-        await this.outputWriter.write(batch, output);
-
-        this.logger.success(`✓ Saved output for: ${batch.name}`);
+        await this.processBatch(batch);
 
         // Reload prompts if needed
         if (reloadPrompts) {
           await this.promptProvider.reload();
-          prompt = await this.promptProvider.getPrompt();
           this.logger.info('  ↻ Prompts reloaded to include new outputs');
         }
       } catch (error) {
@@ -97,6 +102,23 @@ export class Processor {
     }
 
     this.logger.success('\nDone!');
+  }
+
+  /**
+   * Process a single batch through AI and write output
+   * This method can be called externally by ProcessorOutputWriter for chaining
+   */
+  async processBatch(batch: Batch): Promise<void> {
+    // Get the prompt
+    const prompt = await this.promptProvider.getPrompt();
+
+    // Process the batch with AI and set the output on the batch
+    batch.output = await this.processWithAI(batch, prompt);
+
+    // Write the output (either to file or to another processor)
+    await this.outputWriter.write(batch);
+
+    this.logger.success(`✓ Completed: ${batch.name}`);
   }
 
   /**
@@ -117,8 +139,11 @@ export class Processor {
    * Process a batch with the AI model
    */
   private async processWithAI(batch: Batch, prompt: string): Promise<string> {
+    // Format all inputs into a single string for the AI
+    const formattedInputs = formatInputsForAI(batch.inputs);
+
     // Estimate and log token usage
-    const estimatedTokens = estimateTokens(batch.content, prompt);
+    const estimatedTokens = estimateTokens(formattedInputs, prompt);
     this.logger.dim(`  → Estimated tokens: ${estimatedTokens.toLocaleString()}`);
 
     // Use abso-ai to process the content
@@ -127,7 +152,7 @@ export class Processor {
       model: this.model,
       messages: [
         { role: 'system', content: prompt },
-        { role: 'user', content: batch.content },
+        { role: 'user', content: formattedInputs },
       ],
     });
 

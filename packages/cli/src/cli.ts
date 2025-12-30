@@ -9,6 +9,7 @@ import {
   ProcessorFactory,
   ConsoleLogger,
   type ProcessorConfig,
+  type PipelineConfig,
 } from '@phylo/processor';
 
 // Load environment variables from .env file
@@ -45,6 +46,43 @@ function generateDefaultConfig(): ProcessorConfig {
   };
 }
 
+/**
+ * Generate a pipeline config with chained processors
+ */
+function generatePipelineConfig(): PipelineConfig {
+  return {
+    input_folder: './input',
+    max_batch_size: null,
+    last_processed_file: null,
+    input_file_pattern: '**/*.md',
+    processors: {
+      analysis: {
+        prompt_files: ['prompts/analysis.md'],
+        model: 'gpt-4o',
+        output_processor: 'refinement',
+      },
+      refinement: {
+        prompt_files: ['prompts/refinement.md'],
+        model: 'gpt-4o',
+        output_folder: './output',
+        output_file_extension: '.md',
+      },
+    },
+    env: {
+      OPENAI_API_KEY: '',
+      ANTHROPIC_API_KEY: '',
+      GOOGLE_API_KEY: '',
+      MISTRAL_API_KEY: '',
+      GROQ_API_KEY: '',
+      OPENROUTER_API_KEY: '',
+      COHERE_API_KEY: '',
+      TOGETHER_API_KEY: '',
+      PERPLEXITY_API_KEY: '',
+      FIREWORKS_API_KEY: '',
+    },
+  };
+}
+
 const program = new Command();
 
 program
@@ -54,8 +92,9 @@ program
 
 program
   .option('-c, --config <path>', 'Path to JSON config file')
-  .option('--init', 'Generate a config file with all available options')
-  .action(async (options: { config?: string; init?: boolean }) => {
+  .option('--init', 'Generate a single processor config file')
+  .option('--init-pipeline', 'Generate a pipeline config file with chained processors')
+  .action(async (options: { config?: string; init?: boolean; initPipeline?: boolean }) => {
     const logger = new ConsoleLogger();
 
     try {
@@ -78,9 +117,32 @@ program
         return;
       }
 
+      // Handle --init-pipeline flag
+      if (options.initPipeline) {
+        const configPath = join(process.cwd(), 'phylo.config.json');
+
+        if (existsSync(configPath)) {
+          logger.error(`Config file already exists: ${configPath}`);
+          process.exit(1);
+        }
+
+        const pipelineConfig = generatePipelineConfig();
+        await writeFile(configPath, JSON.stringify(pipelineConfig, null, 2), {
+          encoding: 'utf-8',
+        });
+
+        logger.success(`Created pipeline config file: ${configPath}`);
+        logger.info('Edit the file to configure your input folder, processors, prompts, and API keys.');
+        logger.info('');
+        logger.info('Pipeline processors:');
+        logger.dim('  - "analysis" → processes input files and chains to "refinement"');
+        logger.dim('  - "refinement" → refines output and writes to output folder');
+        return;
+      }
+
       // Process with config file
       if (!options.config) {
-        logger.error('Error: --config <path> is required when not using --init');
+        logger.error('Error: --config <path> is required when not using --init or --init-pipeline');
         process.exit(1);
       }
 

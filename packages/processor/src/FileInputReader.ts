@@ -3,8 +3,6 @@ import { resolve } from 'node:path';
 import { glob } from 'glob';
 import type { InputReader, Batch, FileInfo } from './types.js';
 
-const SEPARATOR = '\n\n' + '='.repeat(80) + '\n\n';
-
 /**
  * File-based implementation of InputReader
  * Reads markdown files from a folder and creates batches
@@ -86,21 +84,20 @@ export class FileInputReader implements InputReader {
    * Create a batch from a list of files
    */
   private async createBatch(filePaths: string[]): Promise<Batch> {
-    // Read and concatenate all file contents
-    const contents: string[] = [];
+    // Build inputs record with file path as key, content as value
+    const inputs: Record<string, string> = {};
 
     for (const filePath of filePaths) {
       const content = await readFile(filePath, { encoding: 'utf-8' });
-      contents.push(`File: ${filePath}\n\n${content}`);
+      inputs[filePath] = content;
     }
 
-    const combinedContent = contents.join(SEPARATOR);
     const name = this.generateBatchName(filePaths);
     const lastProcessed = filePaths[filePaths.length - 1];
 
     return {
       name,
-      content: combinedContent,
+      inputs,
       sourceFiles: filePaths,
       lastProcessed,
     };

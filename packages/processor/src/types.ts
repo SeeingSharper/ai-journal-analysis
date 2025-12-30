@@ -2,11 +2,13 @@
  * Represents a batch of content to be processed
  */
 export interface Batch {
-  /** Name identifier for the batch (used for output filename) */
+  /** Name identifier for the batch (used for output filename and as input key for downstream processors) */
   name: string;
-  /** Combined content of the batch */
-  content: string;
-  /** Source files that make up this batch */
+  /** Named inputs: file paths or processor names mapped to their content */
+  inputs: Record<string, string>;
+  /** The processor's output (set after processing) */
+  output?: string;
+  /** Source files that make up this batch (for tracking original files) */
   sourceFiles: string[];
   /** Path to the last processed file (for state tracking) */
   lastProcessed?: string;
@@ -27,12 +29,12 @@ export interface InputReader {
  */
 export interface OutputWriter {
   /**
-   * Write the processed content for a batch
+   * Write the processed output for a batch
+   * The output is available in batch.output
    * Also handles persisting state (lastProcessed) if provided
-   * @param batch - The original batch that was processed
-   * @param content - The AI-generated content to write
+   * @param batch - The batch with output set
    */
-  write(batch: Batch, content: string): Promise<void>;
+  write(batch: Batch): Promise<void>;
 }
 
 /**
@@ -121,5 +123,43 @@ export interface FileInfo {
   path: string;
   /** Modification time in milliseconds */
   mtime: number;
+}
+
+/**
+ * Configuration for a named processor in a pipeline
+ */
+export interface NamedProcessorConfig {
+  /** Inline prompt string */
+  prompt?: string;
+  /** Single file path containing the prompt */
+  prompt_file?: string;
+  /** Array of prompts/files to combine */
+  prompt_files?: string[];
+  /** AI model to use (default: gpt-4o) */
+  model?: string;
+  /** Name of another processor to chain output to */
+  output_processor?: string;
+  /** Where to save AI-generated outputs (terminal output) */
+  output_folder?: string;
+  /** File extension for output files (default: .md) */
+  output_file_extension?: string;
+}
+
+/**
+ * Configuration for a processing pipeline with multiple chained processors
+ */
+export interface PipelineConfig {
+  /** Path to folder containing markdown files to process */
+  input_folder: string;
+  /** Named processors in the pipeline */
+  processors: Record<string, NamedProcessorConfig>;
+  /** Number of files to concatenate and send together in a single AI request */
+  max_batch_size?: number | null;
+  /** Path to the last successfully processed file (auto-managed) */
+  last_processed_file?: string | null;
+  /** Glob pattern for filtering input files (default: all .md files) */
+  input_file_pattern?: string;
+  /** Environment variables (API keys) - takes priority over .env */
+  env?: Record<string, string>;
 }
 
