@@ -5,55 +5,50 @@ import type { PromptProvider } from './types.js';
 /**
  * File-based implementation of PromptProvider
  * Loads prompts from files, folders, or inline strings
+ *
+ * If the output folder matches a prompt source folder, caching is disabled
+ * so that each call to getPrompt() reads fresh content from disk.
  */
 export class FilePromptProvider implements PromptProvider {
   private promptSources: string | string[];
-  private outputFolder: string | null;
   private cachedPrompt: string | null = null;
-  private _shouldReload: boolean = false;
+  private shouldCache: boolean;
 
   constructor(options: {
     promptSources: string | string[];
     outputFolder?: string;
   }) {
     this.promptSources = options.promptSources;
-    this.outputFolder = options.outputFolder ?? null;
 
-    // Determine if we should reload prompts (iterative prompting)
-    this._shouldReload = this.checkShouldReload();
+    // Don't cache if output folder matches a prompt source (iterative prompting)
+    this.shouldCache = !this.checkOutputMatchesPromptSource(options.outputFolder);
   }
 
   /**
    * Get the current prompt
+   * If caching is disabled, always reads fresh from disk
    */
   async getPrompt(): Promise<string> {
-    if (this.cachedPrompt === null) {
-      this.cachedPrompt = await this.loadPrompt(this.promptSources);
+    if (this.shouldCache && this.cachedPrompt !== null) {
+      return this.cachedPrompt;
     }
-    return this.cachedPrompt;
+
+    const prompt = await this.loadPrompt(this.promptSources);
+
+    if (this.shouldCache) {
+      this.cachedPrompt = prompt;
+    }
+
+    return prompt;
   }
 
   /**
-   * Reload the prompt from sources
+   * Check if output folder matches any prompt source paths
    */
-  async reload(): Promise<void> {
-    this.cachedPrompt = await this.loadPrompt(this.promptSources);
-  }
+  private checkOutputMatchesPromptSource(outputFolder?: string): boolean {
+    if (!outputFolder) return false;
 
-  /**
-   * Check if prompts should be reloaded after each batch
-   */
-  shouldReload(): boolean {
-    return this._shouldReload;
-  }
-
-  /**
-   * Check if output folder matches any prompt paths
-   */
-  private checkShouldReload(): boolean {
-    if (!this.outputFolder) return false;
-
-    const outputPath = resolve(this.outputFolder);
+    const outputPath = resolve(outputFolder);
     const promptPaths = Array.isArray(this.promptSources)
       ? this.promptSources
       : [this.promptSources];
@@ -133,4 +128,3 @@ export class FilePromptProvider implements PromptProvider {
     return prompts.join('\n\n');
   }
 }
-

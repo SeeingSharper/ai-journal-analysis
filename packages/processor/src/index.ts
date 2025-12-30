@@ -18,7 +18,7 @@ export { FileOutputWriter } from './FileOutputWriter.js';
 export { FilePromptProvider } from './FilePromptProvider.js';
 export { ProcessorOutputWriter } from './ProcessorOutputWriter.js';
 
-// Types
+// Types and utilities
 export type {
   Batch,
   InputReader,
@@ -29,4 +29,6 @@ export type {
   Logger,
   FileInfo,
 } from './types.js';
+
+export { FILE_INPUT_PREFIX, getFilesFromInputs } from './types.js';
 

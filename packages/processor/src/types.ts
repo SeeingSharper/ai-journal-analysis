@@ -1,15 +1,28 @@
 /**
+ * Prefix for file-based inputs in the batch inputs record
+ * File inputs are keyed as "file:/path/to/file.md"
+ */
+export const FILE_INPUT_PREFIX = 'file:';
+
+/**
+ * Extract file paths from batch inputs (keys starting with "file:")
+ */
+export function getFilesFromInputs(inputs: Record<string, string>): string[] {
+  return Object.keys(inputs)
+    .filter(key => key.startsWith(FILE_INPUT_PREFIX))
+    .map(key => key.slice(FILE_INPUT_PREFIX.length));
+}
+
+/**
  * Represents a batch of content to be processed
  */
 export interface Batch {
   /** Name identifier for the batch (used for output filename and as input key for downstream processors) */
   name: string;
-  /** Named inputs: file paths or processor names mapped to their content */
+  /** Named inputs: file paths (prefixed with "file:") or processor names mapped to their content */
   inputs: Record<string, string>;
   /** The processor's output (set after processing) */
   output?: string;
-  /** Source files that make up this batch (for tracking original files) */
-  sourceFiles: string[];
   /** Path to the last processed file (for state tracking) */
   lastProcessed?: string;
 }
@@ -43,18 +56,9 @@ export interface OutputWriter {
 export interface PromptProvider {
   /**
    * Get the current prompt
+   * Implementations handle caching internally as appropriate
    */
   getPrompt(): Promise<string>;
-
-  /**
-   * Reload the prompt (for iterative prompting scenarios)
-   */
-  reload(): Promise<void>;
-
-  /**
-   * Check if prompts should be reloaded after each batch
-   */
-  shouldReload(): boolean;
 }
 
 

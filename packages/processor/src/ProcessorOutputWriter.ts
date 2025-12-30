@@ -26,10 +26,10 @@ export class ProcessorOutputWriter implements OutputWriter {
     };
 
     // Create a new batch for the destination processor
+    // File inputs (prefixed with "file:") are preserved in the inputs record
     const newBatch: Batch = {
       name: this.destinationProcessorName,
       inputs: newInputs,
-      sourceFiles: batch.sourceFiles,
       // Don't propagate lastProcessed - only the root processor tracks state
     };
 

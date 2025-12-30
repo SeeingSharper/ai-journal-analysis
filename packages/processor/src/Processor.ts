@@ -1,3 +1,4 @@
+import { getFilesFromInputs } from './types.js';
 import type { InputReader, OutputWriter, PromptProvider, Batch, Logger } from './types.js';
 
 // Lazy-loaded abso instance
@@ -62,14 +63,6 @@ export class Processor {
    * Process all batches from the input reader
    */
   async process(): Promise<void> {
-    // Check if we need to reload prompts after each batch
-    const reloadPrompts = this.promptProvider.shouldReload();
-
-    if (reloadPrompts) {
-      this.logger.info('Iterative prompting enabled: Output folder matches a prompt folder');
-      this.logger.info('Prompts will be reloaded after each batch to include previous outputs\n');
-    }
-
     // Read all batches
     const batches = await this.inputReader.read();
 
@@ -78,7 +71,7 @@ export class Processor {
       return;
     }
 
-    const totalFiles = batches.reduce((sum, b) => sum + b.sourceFiles.length, 0);
+    const totalFiles = batches.reduce((sum, b) => sum + getFilesFromInputs(b.inputs).length, 0);
     this.logger.info(`Found ${totalFiles} item(s) to process in ${batches.length} batch(es)`);
 
     // Process each batch
@@ -87,12 +80,6 @@ export class Processor {
 
       try {
         await this.processBatch(batch);
-
-        // Reload prompts if needed
-        if (reloadPrompts) {
-          await this.promptProvider.reload();
-          this.logger.info('  ↻ Prompts reloaded to include new outputs');
-        }
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         this.logger.error(`✗ Error processing ${batch.name}: ${errorMessage}`);
@@ -125,13 +112,18 @@ export class Processor {
    * Log the start of batch processing
    */
   private logBatchStart(batch: Batch): void {
-    if (batch.sourceFiles.length === 1) {
-      this.logger.info(`\nProcessing: ${batch.sourceFiles[0]}`);
-    } else {
-      this.logger.info(`\nProcessing batch of ${batch.sourceFiles.length} files:`);
-      for (const filePath of batch.sourceFiles) {
+    const files = getFilesFromInputs(batch.inputs);
+
+    if (files.length === 1) {
+      this.logger.info(`\nProcessing: ${files[0]}`);
+    } else if (files.length > 1) {
+      this.logger.info(`\nProcessing batch of ${files.length} files:`);
+      for (const filePath of files) {
         this.logger.dim(`  - ${filePath}`);
       }
+    } else {
+      // No file inputs (e.g., downstream processor receiving from upstream)
+      this.logger.info(`\nProcessing: ${batch.name}`);
     }
   }
 
