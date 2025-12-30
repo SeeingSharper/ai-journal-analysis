@@ -2,7 +2,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { glob } from 'glob';
 import { FILE_INPUT_PREFIX } from './types.js';
-import type { InputReader, Batch, FileInfo } from './types.js';
+import type { InputReader, Batch, FileInfo, NamedContent } from './types.js';
 
 /**
  * File-based implementation of InputReader
@@ -85,12 +85,15 @@ export class FileInputReader implements InputReader {
    * Create a batch from a list of files
    */
   private async createBatch(filePaths: string[]): Promise<Batch> {
-    // Build inputs record with "file:" prefixed keys
-    const inputs: Record<string, string> = {};
+    // Build inputs array with "file:" prefixed names
+    const inputs: NamedContent[] = [];
 
     for (const filePath of filePaths) {
       const content = await readFile(filePath, { encoding: 'utf-8' });
-      inputs[`${FILE_INPUT_PREFIX}${filePath}`] = content;
+      inputs.push({
+        name: `${FILE_INPUT_PREFIX}${filePath}`,
+        content,
+      });
     }
 
     const name = this.generateBatchName(filePaths);

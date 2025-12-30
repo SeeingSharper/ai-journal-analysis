@@ -29,12 +29,12 @@ export class FileOutputWriter implements OutputWriter {
     // Create output directory if it doesn't exist
     await mkdir(this.outputFolder, { recursive: true });
 
-    // Generate output filename
+    // Generate output filename using the batch name (preserved from input files)
     const outputFilename = `${batch.name}${this.fileExtension}`;
     const outputPath = join(this.outputFolder, outputFilename);
 
-    // Save the output (use batch.output or empty string if not set)
-    await writeFile(outputPath, batch.output ?? '', { encoding: 'utf-8' });
+    // Save the output content (use batch.output.content or empty string if not set)
+    await writeFile(outputPath, batch.output?.content ?? '', { encoding: 'utf-8' });
 
     // Update and save config state if configManager is provided
     if (this.configManager && batch.lastProcessed) {

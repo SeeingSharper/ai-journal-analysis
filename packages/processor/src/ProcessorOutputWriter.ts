@@ -7,28 +7,27 @@ import type { Processor } from './Processor.js';
  */
 export class ProcessorOutputWriter implements OutputWriter {
   private destinationProcessor: Processor;
-  private destinationProcessorName: string;
 
-  constructor(destinationProcessor: Processor, destinationProcessorName: string) {
+  constructor(destinationProcessor: Processor) {
     this.destinationProcessor = destinationProcessor;
-    this.destinationProcessorName = destinationProcessorName;
   }
 
   /**
    * Feed the processed content to the destination processor as a new batch
-   * The current processor's output is added to inputs with the batch name as key
+   * The current processor's output is added to the inputs array
+   * The batch name is preserved throughout the pipeline
    */
   async write(batch: Batch): Promise<void> {
-    // Create new inputs: copy all original inputs + add this processor's output
-    const newInputs: Record<string, string> = {
-      ...batch.inputs,
-      [batch.name]: batch.output ?? '',
-    };
+    // Create new inputs array: copy all original inputs + add this processor's output
+    const newInputs = [...batch.inputs];
+    if (batch.output) {
+      newInputs.push(batch.output);
+    }
 
     // Create a new batch for the destination processor
-    // File inputs (prefixed with "file:") are preserved in the inputs record
+    // batch.name is preserved - it will be used for the final output filename
     const newBatch: Batch = {
-      name: this.destinationProcessorName,
+      name: batch.name,
       inputs: newInputs,
       // Don't propagate lastProcessed - only the root processor tracks state
     };
@@ -37,4 +36,3 @@ export class ProcessorOutputWriter implements OutputWriter {
     await this.destinationProcessor.processBatch(newBatch);
   }
 }
-

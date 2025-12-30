@@ -51,7 +51,7 @@ export class ProcessorFactory {
         if (!destinationProcessor) {
           throw new Error(`Destination processor "${processorConfig.output_processor}" not found`);
         }
-        outputWriter = new ProcessorOutputWriter(destinationProcessor, processorConfig.output_processor);
+        outputWriter = new ProcessorOutputWriter(destinationProcessor);
       } else {
         throw new Error(`Processor "${name}" has no output configured`);
       }
@@ -64,6 +64,7 @@ export class ProcessorFactory {
 
       // Create the processor
       const processor = new Processor({
+        name,
         inputReader: isEntry
           ? new FileInputReader({
               inputFolder: config.input_folder,

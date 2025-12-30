@@ -1,28 +1,38 @@
 /**
- * Prefix for file-based inputs in the batch inputs record
- * File inputs are keyed as "file:/path/to/file.md"
+ * Prefix for file-based inputs
+ * File inputs have names like "file:/path/to/file.md"
  */
 export const FILE_INPUT_PREFIX = 'file:';
 
 /**
- * Extract file paths from batch inputs (keys starting with "file:")
+ * A named piece of content (input or output)
  */
-export function getFilesFromInputs(inputs: Record<string, string>): string[] {
-  return Object.keys(inputs)
-    .filter(key => key.startsWith(FILE_INPUT_PREFIX))
-    .map(key => key.slice(FILE_INPUT_PREFIX.length));
+export interface NamedContent {
+  /** Identifier: file path (with "file:" prefix) or processor name */
+  name: string;
+  /** The actual content */
+  content: string;
+}
+
+/**
+ * Extract file paths from batch inputs (names starting with "file:")
+ */
+export function getFilesFromInputs(inputs: NamedContent[]): string[] {
+  return inputs
+    .filter(input => input.name.startsWith(FILE_INPUT_PREFIX))
+    .map(input => input.name.slice(FILE_INPUT_PREFIX.length));
 }
 
 /**
  * Represents a batch of content to be processed
  */
 export interface Batch {
-  /** Name identifier for the batch (used for output filename and as input key for downstream processors) */
+  /** Name identifier for the batch (used for output filename) - stays constant through pipeline */
   name: string;
-  /** Named inputs: file paths (prefixed with "file:") or processor names mapped to their content */
-  inputs: Record<string, string>;
-  /** The processor's output (set after processing) */
-  output?: string;
+  /** Array of named inputs: file contents or processor outputs */
+  inputs: NamedContent[];
+  /** The processor's output with its name (processor name that created it) */
+  output?: NamedContent;
   /** Path to the last processed file (for state tracking) */
   lastProcessed?: string;
 }

@@ -21,6 +21,7 @@ export { ProcessorOutputWriter } from './ProcessorOutputWriter.js';
 // Types and utilities
 export type {
   Batch,
+  NamedContent,
   InputReader,
   OutputWriter,
   PromptProvider,

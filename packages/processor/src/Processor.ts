@@ -1,5 +1,5 @@
 import { getFilesFromInputs } from './types.js';
-import type { InputReader, OutputWriter, PromptProvider, Batch, Logger } from './types.js';
+import type { InputReader, OutputWriter, PromptProvider, Batch, Logger, NamedContent } from './types.js';
 
 // Lazy-loaded abso instance
 let absoInstance: Awaited<typeof import('abso-ai')>['abso'] | null = null;
@@ -25,11 +25,11 @@ function estimateTokens(content: string, prompt: string): number {
 /**
  * Format batch inputs into a single string for the AI
  */
-function formatInputsForAI(inputs: Record<string, string>): string {
+function formatInputsForAI(inputs: NamedContent[]): string {
   const sections: string[] = [];
 
-  for (const [key, content] of Object.entries(inputs)) {
-    sections.push(`Input: ${key}\n\n${content}`);
+  for (const input of inputs) {
+    sections.push(`Input: ${input.name}\n\n${input.content}`);
   }
 
   return sections.join(INPUT_SEPARATOR);
@@ -39,6 +39,7 @@ function formatInputsForAI(inputs: Record<string, string>): string {
  * Main processor class that orchestrates the processing pipeline
  */
 export class Processor {
+  private name: string;
   private inputReader: InputReader;
   private outputWriter: OutputWriter;
   private promptProvider: PromptProvider;
@@ -46,12 +47,14 @@ export class Processor {
   private model: string;
 
   constructor(options: {
+    name: string;
     inputReader: InputReader;
     outputWriter: OutputWriter;
     promptProvider: PromptProvider;
     logger: Logger;
     model?: string;
   }) {
+    this.name = options.name;
     this.inputReader = options.inputReader;
     this.outputWriter = options.outputWriter;
     this.promptProvider = options.promptProvider;
@@ -100,7 +103,11 @@ export class Processor {
     const prompt = await this.promptProvider.getPrompt();
 
     // Process the batch with AI and set the output on the batch
-    batch.output = await this.processWithAI(batch, prompt);
+    const content = await this.processWithAI(batch, prompt);
+    batch.output = {
+      name: this.name,
+      content,
+    };
 
     // Write the output (either to file or to another processor)
     await this.outputWriter.write(batch);
