@@ -14,59 +14,17 @@ export class ProcessorFactory {
    * Create a Processor instance from configuration
    * @param configManager - The configuration manager
    * @param logger - Logger instance
-   * @returns A fully configured Processor instance (entry processor for pipelines)
+   * @returns A fully configured Processor instance (entry processor)
    */
   static create(configManager: ConfigManager, logger: Logger): Processor {
-    if (configManager.isPipeline) {
-      return ProcessorFactory.createPipeline(configManager, logger);
-    }
-
-    return ProcessorFactory.createSingle(configManager, logger);
-  }
-
-  /**
-   * Create a single processor (legacy config format)
-   */
-  private static createSingle(configManager: ConfigManager, logger: Logger): Processor {
-    // Create the input reader
-    const inputReader = new FileInputReader({
-      inputFolder: configManager.inputFolder,
-      lastProcessed: configManager.lastProcessed,
-      batchSize: configManager.batchSize ?? 1,
-      filePattern: configManager.inputFilePattern,
-    });
-
-    // Create the output writer
-    const outputWriter = new FileOutputWriter({
-      outputFolder: configManager.outputFolder,
-      configManager,
-      fileExtension: configManager.outputFileExtension,
-    });
-
-    // Create the prompt provider
-    const promptProvider = new FilePromptProvider({
-      promptSources: configManager.getPromptValue(),
-      outputFolder: configManager.outputFolder,
-    });
-
-    // Create and return the processor
-    return new Processor({
-      inputReader,
-      outputWriter,
-      promptProvider,
-      logger,
-      model: configManager.model,
-    });
-  }
-
-  /**
-   * Create a pipeline of chained processors
-   */
-  private static createPipeline(configManager: ConfigManager, logger: Logger): Processor {
-    const pipelineConfig = configManager.getPipelineConfig();
+    const config = configManager.getConfig();
     const entryName = configManager.getEntryProcessorName();
 
-    logger.info(`Building pipeline starting from "${entryName}"...`);
+    // Only show pipeline info if there are multiple processors
+    const processorNames = Object.keys(config.processors);
+    if (processorNames.length > 1) {
+      logger.info(`Building pipeline starting from "${entryName}"...`);
+    }
 
     // Build processors in order from terminal (end) to entry (start)
     // This way we can wire up ProcessorOutputWriter with the destination processor
@@ -108,10 +66,10 @@ export class ProcessorFactory {
       const processor = new Processor({
         inputReader: isEntry
           ? new FileInputReader({
-              inputFolder: pipelineConfig.input_folder,
-              lastProcessed: pipelineConfig.last_processed_file,
-              batchSize: pipelineConfig.max_batch_size ?? 1,
-              filePattern: pipelineConfig.input_file_pattern,
+              inputFolder: config.input_folder,
+              lastProcessed: config.last_processed_file,
+              batchSize: config.max_batch_size ?? 1,
+              filePattern: config.input_file_pattern,
             })
           : new NoOpInputReader(), // Non-entry processors don't read from files
         outputWriter,
@@ -121,7 +79,10 @@ export class ProcessorFactory {
       });
 
       processors.set(name, processor);
-      logger.dim(`  → Created processor "${name}"`);
+
+      if (processorNames.length > 1) {
+        logger.dim(`  → Created processor "${name}"`);
+      }
     }
 
     // Return the entry processor
@@ -130,7 +91,10 @@ export class ProcessorFactory {
       throw new Error('Failed to create entry processor');
     }
 
-    logger.info('');
+    if (processorNames.length > 1) {
+      logger.info('');
+    }
+
     return entryProcessor;
   }
 
@@ -165,7 +129,7 @@ export class ProcessorFactory {
 }
 
 /**
- * No-op input reader for non-entry processors in a pipeline.
+ * No-op input reader for non-entry processors.
  * These processors receive their input via ProcessorOutputWriter, not from files.
  */
 class NoOpInputReader {
@@ -173,4 +137,3 @@ class NoOpInputReader {
     return [];
   }
 }
-

@@ -1,27 +1,18 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import type { ProcessorConfig, PipelineConfig, NamedProcessorConfig, Logger } from './types.js';
-
-/**
- * Type guard to check if config is a pipeline config
- */
-function isPipelineConfig(config: ProcessorConfig | PipelineConfig): config is PipelineConfig {
-  return 'processors' in config && typeof config.processors === 'object';
-}
+import type { ProcessorConfig, NamedProcessorConfig, Logger } from './types.js';
 
 /**
  * Manages configuration loading, validation, and state persistence
  */
 export class ConfigManager {
-  private config: ProcessorConfig | PipelineConfig;
+  private config: ProcessorConfig;
   private configPath: string;
   private logger: Logger | null;
-  private _isPipeline: boolean;
 
-  private constructor(config: ProcessorConfig | PipelineConfig, configPath: string, logger?: Logger) {
+  private constructor(config: ProcessorConfig, configPath: string, logger?: Logger) {
     this.config = config;
     this.configPath = configPath;
     this.logger = logger ?? null;
-    this._isPipeline = isPipelineConfig(config);
   }
 
   /**
@@ -29,26 +20,19 @@ export class ConfigManager {
    */
   static async load(configPath: string, logger?: Logger): Promise<ConfigManager> {
     const content = await readFile(configPath, { encoding: 'utf-8' });
-    const config = JSON.parse(content) as ProcessorConfig | PipelineConfig;
+    const config = JSON.parse(content) as ProcessorConfig;
 
     // Validate required fields
     if (!config.input_folder) {
       throw new Error('Config must contain "input_folder"');
     }
 
-    // Check if this is a pipeline config
-    if (isPipelineConfig(config)) {
-      // Validate pipeline config
-      ConfigManager.validatePipelineConfig(config);
-    } else {
-      // Validate single processor config
-      if (!config.output_folder) {
-        throw new Error('Config must contain "output_folder"');
-      }
-      if (!config.prompt && !config.prompt_file && !config.prompt_files) {
-        throw new Error('Config must contain "prompt", "prompt_file", or "prompt_files"');
-      }
+    if (!config.processors) {
+      throw new Error('Config must contain "processors"');
     }
+
+    // Validate the config
+    ConfigManager.validateConfig(config);
 
     // Apply environment variables from config (takes priority over existing)
     if (config.env) {
@@ -63,13 +47,13 @@ export class ConfigManager {
   }
 
   /**
-   * Validate a pipeline configuration
+   * Validate a processor configuration
    */
-  private static validatePipelineConfig(config: PipelineConfig): void {
+  private static validateConfig(config: ProcessorConfig): void {
     const processorNames = Object.keys(config.processors);
 
     if (processorNames.length === 0) {
-      throw new Error('Pipeline config must have at least one processor');
+      throw new Error('Config must have at least one processor');
     }
 
     // Track which processors are referenced as outputs
@@ -109,53 +93,31 @@ export class ConfigManager {
     const entryProcessors = processorNames.filter(name => !referencedProcessors.has(name));
 
     if (entryProcessors.length === 0) {
-      throw new Error('Pipeline has a circular reference - no entry processor found');
+      throw new Error('Config has a circular reference - no entry processor found');
     }
 
     if (entryProcessors.length > 1) {
-      throw new Error(`Pipeline has multiple entry processors: ${entryProcessors.join(', ')}. Only one entry processor is supported.`);
+      throw new Error(`Config has multiple entry processors: ${entryProcessors.join(', ')}. Only one entry processor is supported.`);
     }
   }
 
   /**
    * Get the full configuration
    */
-  getConfig(): ProcessorConfig | PipelineConfig {
+  getConfig(): ProcessorConfig {
     return this.config;
   }
 
   /**
-   * Check if this is a pipeline configuration
-   */
-  get isPipeline(): boolean {
-    return this._isPipeline;
-  }
-
-  /**
-   * Get the pipeline config (only valid if isPipeline is true)
-   */
-  getPipelineConfig(): PipelineConfig {
-    if (!this._isPipeline) {
-      throw new Error('Config is not a pipeline configuration');
-    }
-    return this.config as PipelineConfig;
-  }
-
-  /**
-   * Get the entry processor name for a pipeline
+   * Get the entry processor name
    * (the processor that is not referenced by any other processor)
    */
   getEntryProcessorName(): string {
-    if (!this._isPipeline) {
-      throw new Error('Config is not a pipeline configuration');
-    }
-
-    const pipelineConfig = this.config as PipelineConfig;
-    const processorNames = Object.keys(pipelineConfig.processors);
+    const processorNames = Object.keys(this.config.processors);
 
     // Find which processors are referenced by others
     const referencedProcessors = new Set<string>();
-    for (const processor of Object.values(pipelineConfig.processors)) {
+    for (const processor of Object.values(this.config.processors)) {
       if (processor.output_processor) {
         referencedProcessors.add(processor.output_processor);
       }
@@ -167,39 +129,16 @@ export class ConfigManager {
   }
 
   /**
-   * Get a named processor config from the pipeline
+   * Get a named processor config
    */
   getProcessorConfig(name: string): NamedProcessorConfig {
-    if (!this._isPipeline) {
-      throw new Error('Config is not a pipeline configuration');
-    }
-
-    const pipelineConfig = this.config as PipelineConfig;
-    const processor = pipelineConfig.processors[name];
+    const processor = this.config.processors[name];
 
     if (!processor) {
-      throw new Error(`Processor "${name}" not found in pipeline`);
+      throw new Error(`Processor "${name}" not found in config`);
     }
 
     return processor;
-  }
-
-  /**
-   * Get the prompt value from config (handles all three formats)
-   * Only valid for single processor configs
-   */
-  getPromptValue(): string | string[] {
-    if (this._isPipeline) {
-      throw new Error('getPromptValue() is not available for pipeline configs');
-    }
-    const config = this.config as ProcessorConfig;
-    if (config.prompt_files) {
-      return config.prompt_files;
-    }
-    if (config.prompt_file) {
-      return config.prompt_file;
-    }
-    return config.prompt || '';
   }
 
   /**
@@ -233,26 +172,6 @@ export class ConfigManager {
   }
 
   /**
-   * Get output folder path (only valid for single processor configs)
-   */
-  get outputFolder(): string {
-    if (this._isPipeline) {
-      throw new Error('outputFolder is not available for pipeline configs');
-    }
-    return (this.config as ProcessorConfig).output_folder;
-  }
-
-  /**
-   * Get the AI model (only valid for single processor configs)
-   */
-  get model(): string | undefined {
-    if (this._isPipeline) {
-      throw new Error('model is not available for pipeline configs');
-    }
-    return (this.config as ProcessorConfig).model;
-  }
-
-  /**
    * Get the batch size
    */
   get batchSize(): number | null | undefined {
@@ -272,15 +191,4 @@ export class ConfigManager {
   get inputFilePattern(): string | undefined {
     return this.config.input_file_pattern;
   }
-
-  /**
-   * Get the output file extension (only valid for single processor configs)
-   */
-  get outputFileExtension(): string | undefined {
-    if (this._isPipeline) {
-      throw new Error('outputFileExtension is not available for pipeline configs');
-    }
-    return (this.config as ProcessorConfig).output_file_extension;
-  }
 }
-

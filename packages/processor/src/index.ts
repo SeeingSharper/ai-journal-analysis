@@ -25,7 +25,6 @@ export type {
   OutputWriter,
   PromptProvider,
   ProcessorConfig,
-  PipelineConfig,
   NamedProcessorConfig,
   Logger,
   FileInfo,

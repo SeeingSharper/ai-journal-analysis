@@ -57,33 +57,6 @@ export interface PromptProvider {
   shouldReload(): boolean;
 }
 
-/**
- * Configuration interface for the processor
- */
-export interface ProcessorConfig {
-  /** Path to folder containing markdown files to process */
-  input_folder: string;
-  /** Where to save AI-generated outputs */
-  output_folder: string;
-  /** Inline prompt string */
-  prompt?: string;
-  /** Single file path containing the prompt */
-  prompt_file?: string;
-  /** Array of prompts/files to combine */
-  prompt_files?: string[];
-  /** AI model to use (default: gpt-4o) */
-  model?: string;
-  /** Number of files to concatenate and send together in a single AI request */
-  max_batch_size?: number | null;
-  /** Path to the last successfully processed file (auto-managed) */
-  last_processed_file?: string | null;
-  /** Glob pattern for filtering input files (default: all .md files) */
-  input_file_pattern?: string;
-  /** File extension for output files (default: .md) */
-  output_file_extension?: string;
-  /** Environment variables (API keys) - takes priority over .env */
-  env?: Record<string, string>;
-}
 
 /**
  * Interface for logging messages
@@ -146,12 +119,12 @@ export interface NamedProcessorConfig {
 }
 
 /**
- * Configuration for a processing pipeline with multiple chained processors
+ * Configuration for the processor with named processing steps
  */
-export interface PipelineConfig {
+export interface ProcessorConfig {
   /** Path to folder containing markdown files to process */
   input_folder: string;
-  /** Named processors in the pipeline */
+  /** Named processors (can be single or chained) */
   processors: Record<string, NamedProcessorConfig>;
   /** Number of files to concatenate and send together in a single AI request */
   max_batch_size?: number | null;
