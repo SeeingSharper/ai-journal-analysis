@@ -1,4 +1,3 @@
-import { getFilesFromInputs, generateOutputName } from './types.js';
 import type { InputReader, OutputWriter, PromptProvider, Batch, Logger, NamedContent } from './types.js';
 
 // Lazy-loaded abso instance
@@ -74,8 +73,8 @@ export class Processor {
       return;
     }
 
-    const totalFiles = batches.reduce((sum, b) => sum + getFilesFromInputs(b.inputs).length, 0);
-    this.logger.info(`Found ${totalFiles} item(s) to process in ${batches.length} batch(es)`);
+    const totalInputs = batches.reduce((sum, b) => sum + b.inputs.length, 0);
+    this.logger.info(`Found ${totalInputs} input(s) to process in ${batches.length} batch(es)`);
 
     // Process each batch
     for (const batch of batches) {
@@ -114,38 +113,30 @@ export class Processor {
     await this.outputWriter.write(batch);
 
     const batchDesc = this.getBatchDescription(batch);
-    this.logger.success(`✓ Completed: ${batchDesc}`);
+    this.logger.success(`✓ Processed (${this.name}): ${batchDesc}`);
   }
 
   /**
    * Get a description of the batch for logging purposes
    */
   private getBatchDescription(batch: Batch): string {
-    const files = getFilesFromInputs(batch.inputs);
-    if (files.length > 0) {
-      return generateOutputName(files);
+    if (batch.inputs.length === 1) {
+      return batch.inputs[0].name;
     }
-    // No file inputs - use first input name as description
-    return batch.inputs[0]?.name ?? 'batch';
+    return `${batch.inputs.length} inputs`;
   }
 
   /**
    * Log the start of batch processing
    */
   private logBatchStart(batch: Batch): void {
-    const files = getFilesFromInputs(batch.inputs);
-
-    if (files.length === 1) {
-      this.logger.info(`\nProcessing: ${files[0]}`);
-    } else if (files.length > 1) {
-      this.logger.info(`\nProcessing batch of ${files.length} files:`);
-      for (const filePath of files) {
-        this.logger.dim(`  - ${filePath}`);
-      }
+    if (batch.inputs.length === 1) {
+      this.logger.info(`\nProcessing (${this.name}): ${batch.inputs[0].name}`);
     } else {
-      // No file inputs (e.g., downstream processor receiving from upstream)
-      const desc = batch.inputs.map(i => i.name).join(', ');
-      this.logger.info(`\nProcessing inputs: ${desc}`);
+      this.logger.info(`\nProcessing (${this.name}) batch of ${batch.inputs.length} inputs:`);
+      for (const input of batch.inputs) {
+        this.logger.dim(`  - ${input.name}`);
+      }
     }
   }
 
@@ -173,4 +164,3 @@ export class Processor {
     return response.choices[0]?.message?.content || '';
   }
 }
-

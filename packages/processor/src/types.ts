@@ -1,10 +1,4 @@
 /**
- * Prefix for file-based inputs
- * File inputs have names like "file:/path/to/file.md"
- */
-export const FILE_INPUT_PREFIX = 'file:';
-
-/**
  * A named piece of content (input or output)
  */
 export interface NamedContent {
@@ -12,38 +6,6 @@ export interface NamedContent {
   name: string;
   /** The actual content */
   content: string;
-}
-
-/**
- * Extract file paths from batch inputs (names starting with "file:")
- */
-export function getFilesFromInputs(inputs: NamedContent[]): string[] {
-  return inputs
-    .filter(input => input.name.startsWith(FILE_INPUT_PREFIX))
-    .map(input => input.name.slice(FILE_INPUT_PREFIX.length));
-}
-
-/**
- * Generate an output name from file paths (for file-based outputs)
- * Used by FileOutputWriter to determine the output filename
- */
-export function generateOutputName(filePaths: string[]): string {
-  if (filePaths.length === 0) {
-    return 'output';
-  }
-
-  if (filePaths.length === 1) {
-    const fileName = filePaths[0].split('/').pop() || 'output';
-    return fileName.replace(/\.[^.]+$/, '');
-  }
-
-  // Use first and last filename stems for range
-  const firstFileName = filePaths[0].split('/').pop() || '';
-  const lastFileName = filePaths[filePaths.length - 1].split('/').pop() || '';
-  const firstStem = firstFileName.replace(/\.[^.]+$/, '');
-  const lastStem = lastFileName.replace(/\.[^.]+$/, '');
-
-  return `${firstStem}_to_${lastStem}`;
 }
 
 /**
@@ -170,4 +132,3 @@ export interface ProcessorConfig {
   /** Environment variables (API keys) - takes priority over .env */
   env?: Record<string, string>;
 }
-

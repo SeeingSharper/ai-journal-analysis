@@ -1,7 +1,7 @@
 import { readFile, stat } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { glob } from 'glob';
-import { FILE_INPUT_PREFIX } from './types.js';
+import { FILE_INPUT_PREFIX } from './fileConstants.js';
 import type { InputReader, Batch, FileInfo, NamedContent } from './types.js';
 
 /**

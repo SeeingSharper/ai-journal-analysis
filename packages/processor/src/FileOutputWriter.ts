@@ -1,7 +1,7 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { getFilesFromInputs, generateOutputName } from './types.js';
-import type { OutputWriter, Batch } from './types.js';
+import { FILE_INPUT_PREFIX } from './fileConstants.js';
+import type { OutputWriter, Batch, NamedContent } from './types.js';
 import type { ConfigManager } from './ConfigManager.js';
 
 /**
@@ -31,8 +31,8 @@ export class FileOutputWriter implements OutputWriter {
     await mkdir(this.outputFolder, { recursive: true });
 
     // Generate output filename from the file inputs
-    const filePaths = getFilesFromInputs(batch.inputs);
-    const outputName = generateOutputName(filePaths);
+    const filePaths = this.getFilesFromInputs(batch.inputs);
+    const outputName = this.generateOutputName(filePaths);
     const outputFilename = `${outputName}${this.fileExtension}`;
     const outputPath = join(this.outputFolder, outputFilename);
 
@@ -44,5 +44,36 @@ export class FileOutputWriter implements OutputWriter {
       this.configManager.updateLastProcessed(batch.lastProcessed);
       await this.configManager.save();
     }
+  }
+
+  /**
+   * Extract file paths from batch inputs (names starting with "file:")
+   */
+  private getFilesFromInputs(inputs: NamedContent[]): string[] {
+    return inputs
+      .filter(input => input.name.startsWith(FILE_INPUT_PREFIX))
+      .map(input => input.name.slice(FILE_INPUT_PREFIX.length));
+  }
+
+  /**
+   * Generate an output name from file paths
+   */
+  private generateOutputName(filePaths: string[]): string {
+    if (filePaths.length === 0) {
+      return 'output';
+    }
+
+    if (filePaths.length === 1) {
+      const fileName = filePaths[0].split('/').pop() || 'output';
+      return fileName.replace(/\.[^.]+$/, '');
+    }
+
+    // Use first and last filename stems for range
+    const firstFileName = filePaths[0].split('/').pop() || '';
+    const lastFileName = filePaths[filePaths.length - 1].split('/').pop() || '';
+    const firstStem = firstFileName.replace(/\.[^.]+$/, '');
+    const lastStem = lastFileName.replace(/\.[^.]+$/, '');
+
+    return `${firstStem}_to_${lastStem}`;
   }
 }
