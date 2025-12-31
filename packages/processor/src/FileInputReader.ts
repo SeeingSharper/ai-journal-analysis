@@ -96,36 +96,11 @@ export class FileInputReader implements InputReader {
       });
     }
 
-    const name = this.generateBatchName(filePaths);
     const lastProcessed = filePaths[filePaths.length - 1];
 
     return {
-      name,
       inputs,
       lastProcessed,
     };
   }
-
-  /**
-   * Generate a name for the batch based on source files
-   */
-  private generateBatchName(filePaths: string[]): string {
-    if (filePaths.length === 0) {
-      return 'output';
-    }
-
-    if (filePaths.length === 1) {
-      const fileName = filePaths[0].split('/').pop() || 'output';
-      return fileName.replace(/\.[^.]+$/, '');
-    }
-
-    // Use first and last filename stems for range
-    const firstFileName = filePaths[0].split('/').pop() || '';
-    const lastFileName = filePaths[filePaths.length - 1].split('/').pop() || '';
-    const firstStem = firstFileName.replace(/\.[^.]+$/, '');
-    const lastStem = lastFileName.replace(/\.[^.]+$/, '');
-
-    return `${firstStem}_to_${lastStem}`;
-  }
 }
-

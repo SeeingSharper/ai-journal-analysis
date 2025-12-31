@@ -1,4 +1,4 @@
-import { getFilesFromInputs } from './types.js';
+import { getFilesFromInputs, generateOutputName } from './types.js';
 import type { InputReader, OutputWriter, PromptProvider, Batch, Logger, NamedContent } from './types.js';
 
 // Lazy-loaded abso instance
@@ -85,7 +85,8 @@ export class Processor {
         await this.processBatch(batch);
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
-        this.logger.error(`✗ Error processing ${batch.name}: ${errorMessage}`);
+        const batchDesc = this.getBatchDescription(batch);
+        this.logger.error(`✗ Error processing ${batchDesc}: ${errorMessage}`);
         // Don't continue on error, so we can retry from this batch next time
         break;
       }
@@ -112,7 +113,20 @@ export class Processor {
     // Write the output (either to file or to another processor)
     await this.outputWriter.write(batch);
 
-    this.logger.success(`✓ Completed: ${batch.name}`);
+    const batchDesc = this.getBatchDescription(batch);
+    this.logger.success(`✓ Completed: ${batchDesc}`);
+  }
+
+  /**
+   * Get a description of the batch for logging purposes
+   */
+  private getBatchDescription(batch: Batch): string {
+    const files = getFilesFromInputs(batch.inputs);
+    if (files.length > 0) {
+      return generateOutputName(files);
+    }
+    // No file inputs - use first input name as description
+    return batch.inputs[0]?.name ?? 'batch';
   }
 
   /**
@@ -130,7 +144,8 @@ export class Processor {
       }
     } else {
       // No file inputs (e.g., downstream processor receiving from upstream)
-      this.logger.info(`\nProcessing: ${batch.name}`);
+      const desc = batch.inputs.map(i => i.name).join(', ');
+      this.logger.info(`\nProcessing inputs: ${desc}`);
     }
   }
 

@@ -24,16 +24,37 @@ export function getFilesFromInputs(inputs: NamedContent[]): string[] {
 }
 
 /**
+ * Generate an output name from file paths (for file-based outputs)
+ * Used by FileOutputWriter to determine the output filename
+ */
+export function generateOutputName(filePaths: string[]): string {
+  if (filePaths.length === 0) {
+    return 'output';
+  }
+
+  if (filePaths.length === 1) {
+    const fileName = filePaths[0].split('/').pop() || 'output';
+    return fileName.replace(/\.[^.]+$/, '');
+  }
+
+  // Use first and last filename stems for range
+  const firstFileName = filePaths[0].split('/').pop() || '';
+  const lastFileName = filePaths[filePaths.length - 1].split('/').pop() || '';
+  const firstStem = firstFileName.replace(/\.[^.]+$/, '');
+  const lastStem = lastFileName.replace(/\.[^.]+$/, '');
+
+  return `${firstStem}_to_${lastStem}`;
+}
+
+/**
  * Represents a batch of content to be processed
  */
 export interface Batch {
-  /** Name identifier for the batch (used for output filename) - stays constant through pipeline */
-  name: string;
   /** Array of named inputs: file contents or processor outputs */
   inputs: NamedContent[];
   /** The processor's output with its name (processor name that created it) */
   output?: NamedContent;
-  /** Path to the last processed file (for state tracking) */
+  /** Metadata for state tracking (e.g., last processed file path) */
   lastProcessed?: string;
 }
 

@@ -31,5 +31,5 @@ export type {
   FileInfo,
 } from './types.js';
 
-export { FILE_INPUT_PREFIX, getFilesFromInputs } from './types.js';
+export { FILE_INPUT_PREFIX, getFilesFromInputs, generateOutputName } from './types.js';
 

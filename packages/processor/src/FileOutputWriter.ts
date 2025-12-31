@@ -1,6 +1,7 @@
 import { writeFile, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import type { OutputWriter, Batch, Logger } from './types.js';
+import { getFilesFromInputs, generateOutputName } from './types.js';
+import type { OutputWriter, Batch } from './types.js';
 import type { ConfigManager } from './ConfigManager.js';
 
 /**
@@ -29,8 +30,10 @@ export class FileOutputWriter implements OutputWriter {
     // Create output directory if it doesn't exist
     await mkdir(this.outputFolder, { recursive: true });
 
-    // Generate output filename using the batch name (preserved from input files)
-    const outputFilename = `${batch.name}${this.fileExtension}`;
+    // Generate output filename from the file inputs
+    const filePaths = getFilesFromInputs(batch.inputs);
+    const outputName = generateOutputName(filePaths);
+    const outputFilename = `${outputName}${this.fileExtension}`;
     const outputPath = join(this.outputFolder, outputFilename);
 
     // Save the output content (use batch.output.content or empty string if not set)
@@ -42,13 +45,4 @@ export class FileOutputWriter implements OutputWriter {
       await this.configManager.save();
     }
   }
-
-  /**
-   * Get the full output path for a batch
-   */
-  getOutputPath(batch: Batch): string {
-    const outputFilename = `${batch.name}${this.fileExtension}`;
-    return join(this.outputFolder, outputFilename);
-  }
 }
-
